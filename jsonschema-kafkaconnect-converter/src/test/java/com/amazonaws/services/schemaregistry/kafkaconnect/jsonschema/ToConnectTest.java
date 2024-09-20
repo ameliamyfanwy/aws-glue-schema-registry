@@ -671,4 +671,157 @@ public class ToConnectTest {
                                                                    .build());
         assertEquals(4, cache.size());
     }
+
+
+    @Test
+    public void testConverter_implicitoptional_asExpected() throws Exception {
+        JSONObject jsonSchemaObject = new JSONObject("{\n" +
+                "    \"$id\": \"https://example.com/weather-report.schema.json\",\n" +
+                "    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n" +
+                "    \"title\": \"WeatherReport\",\n" +
+                "    \"type\": \"object\",\n" +
+                "    \"properties\": {\n" +
+                "        \"location\": {\n" +
+                "            \"type\": \"object\",\n" +
+                "            \"properties\": {\n" +
+                "                \"city\": {\n" +
+                "                    \"type\": \"string\",\n" +
+                "                    \"description\": \"Name of the city where the weather is being reported.\"\n" +
+                "                },\n" +
+                "                \"state\": {\n" +
+                "                    \"type\": \"string\",\n" +
+                "                    \"description\": \"Name of the state where the weather is being reported.\"\n" +
+                "                },\n" +
+                "                \"zip\": {\n" +
+                "                    \"type\": \"string\",\n" +
+                "                    \"description\": \"Name of the state where the weather is being reported.\"\n" +
+                "                }\n" +
+                "            },\n" +
+                "            \"additionalProperties\": false,\n" +
+                "            \"required\": [\n" +
+                "                \"city\",\n" +
+                "                \"state\"\n" +
+                "            ]\n" +
+                "        },\n" +
+                "        \"temperature\": {\n" +
+                "            \"type\": \"integer\",\n" +
+                "            \"description\": \"Temperature in Farenheit.\"\n" +
+                "        },\n" +
+                "        \"timestamp\": {\n" +
+                "            \"description\": \"Timestamp in epoch format at which the weather was noted.\",\n" +
+                "            \"type\": \"integer\"\n" +
+                "        }\n" +
+                "    },\n" +
+                "    \"additionalProperties\": false,\n" +
+                "    \"required\": [\n" +
+                "        \"location\",\n" +
+                "        \"temperature\",\n" +
+                "        \"timestamp\"\n" +
+                "    ]\n" +
+                "}");
+
+        JSONObject jsonSubject = new JSONObject("{\n" +
+                "    \"location\": {\n" +
+                "        \"city\": \"Phoenix\",\n" +
+                "        \"state\": \"Arizona\"\n" +
+                "    },\n" +
+                "    \"temperature\": 115,\n" +
+                "    \"timestamp\": 1627335205\n" +
+                "}");
+
+        org.everit.json.schema.Schema jsonSchema = org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+        assertDoesNotThrow(() -> jsonSchema.validate(jsonSubject));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonValue = objectMapper.readTree(jsonSubject.toString());
+
+        Schema actualConnectSchema = jsonSchemaToConnectSchemaConverter.toConnectSchema(
+                jsonSchema);
+
+        Object actualConnectValue =
+                jsonNodeToConnectValueConverter.toConnectValue(actualConnectSchema,
+                        jsonValue);
+
+        assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
+    }
+
+    @Test
+    public void testConverter_oneOf_explicitoptional_asExpected() throws Exception {
+        JSONObject jsonSchemaObject = new JSONObject("{\n" +
+                "    \"$id\": \"https://example.com/weather-report.schema.json\",\n" +
+                "    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n" +
+                "    \"title\": \"WeatherReport\",\n" +
+                "    \"type\": \"object\",\n" +
+                "    \"properties\": {\n" +
+                "        \"location\": {\n" +
+                "            \"type\": \"object\",\n" +
+                "            \"properties\": {\n" +
+                "                \"city\": {\n" +
+                "                    \"type\": \"string\",\n" +
+                "                    \"description\": \"Name of the city where the weather is being reported.\"\n" +
+                "                },\n" +
+                "                \"state\": {\n" +
+                "                    \"type\": \"string\",\n" +
+                "                    \"description\": \"Name of the state where the weather is being reported.\"\n" +
+                "                },\n" +
+                "                \"zip\": {\n" +
+                "                    \"oneOf\":[\n" +
+                "                      {\n" +
+                "                        \"type\":\"string\",\n" +
+                "                        \"description\":\"zipcode\"\n" +
+                "                      }," +
+                "                      {\n" +
+                "                        \"type\":\"null\",\n" +
+                "                        \"description\":\"Nulloption\"\n" +
+                "                      }" +
+                "                    ]" +
+                "                }\n" +
+                "            },\n" +
+                "            \"additionalProperties\": false,\n" +
+                "            \"required\": [\n" +
+                "                \"city\",\n" +
+                "                \"state\"\n" +
+                "            ]\n" +
+                "        },\n" +
+                "        \"temperature\": {\n" +
+                "            \"type\": \"integer\",\n" +
+                "            \"description\": \"Temperature in Farenheit.\"\n" +
+                "        },\n" +
+                "        \"timestamp\": {\n" +
+                "            \"description\": \"Timestamp in epoch format at which the weather was noted.\",\n" +
+                "            \"type\": \"integer\"\n" +
+                "        }\n" +
+                "    },\n" +
+                "    \"additionalProperties\": false,\n" +
+                "    \"required\": [\n" +
+                "        \"location\",\n" +
+                "        \"temperature\",\n" +
+                "        \"timestamp\"\n" +
+                "    ]\n" +
+                "}");
+
+        JSONObject jsonSubject = new JSONObject("{\n" +
+                "    \"location\": {\n" +
+                "        \"city\": \"Phoenix\",\n" +
+                "        \"state\": \"Arizona\"\n" +
+                "    },\n" +
+                "    \"temperature\": 115,\n" +
+                "    \"timestamp\": 1627335205\n" +
+                "}");
+
+        org.everit.json.schema.Schema jsonSchema = org.everit.json.schema.loader.SchemaLoader.load(jsonSchemaObject);
+        assertDoesNotThrow(() -> jsonSchema.validate(jsonSubject));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonValue = objectMapper.readTree(jsonSubject.toString());
+
+        Schema actualConnectSchema = jsonSchemaToConnectSchemaConverter.toConnectSchema(
+                jsonSchema);
+
+        Object actualConnectValue =
+                jsonNodeToConnectValueConverter.toConnectValue(actualConnectSchema,
+                        jsonValue);
+
+        assertDoesNotThrow(() -> ConnectSchema.validateValue(actualConnectSchema, actualConnectValue));
+    }
 }
